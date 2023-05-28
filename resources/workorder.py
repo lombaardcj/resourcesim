@@ -12,18 +12,18 @@ class WorkOrder(Object):
         super().__init__()
         # define a name for the work order
         self.name = "WorkOrder"+str(self.id)
-        log.debug("WorkOrder created with id: " + str(self.id))
-        log.debug(self)
+        #log.debug(("WorkOrder created with id: " + str(self.id))
+        #log.debug((self)
     
     # override the process function
     def process(self):
         if self.deleted:
-            #log.debug("WorkOrder with id: " + str(self.id) + " is deleted, skip processing")
+            ##log.debug(("WorkOrder with id: " + str(self.id) + " is deleted, skip processing")
             return
         # call the process function of the base class
         super().process()
         
-        log.debug("WorkOrder with id: " + str(self.id) + " is processing")
+        #log.debug(("WorkOrder with id: " + str(self.id) + " is processing")
         
     # define a string representation of the workorder object
     def __str__(self):

@@ -5,7 +5,7 @@ import time
 
 # import local modules
 from gameengine import GameState
-engine = GameState(startup_tick_duraction=15)
+engine = GameState(startup_tick_duraction=1)
 
 # initialise the logger
 logging.basicConfig(stream=sys.stdout,level=logging.DEBUG)

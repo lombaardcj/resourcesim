@@ -14,42 +14,52 @@ log = logging.getLogger(__name__)
 # define a class for a Flag object
 class Flag(Object):
     # override the init function
-    def __init__(self, location):
+    def __init__(self, location, capacity=3):
         super().__init__(location)
         # define a name for the flag
         self.name = "Flag"+str(self.id)
         self.item_stack = [] # Keep list of all items stored at this flag
-        log.debug("Flag created with id: " + str(self.id))
-        log.debug(self)
+        self.capacity = capacity # maximum number of items that can be stored at this flag
+        #log.debug(("Flag created with id: " + str(self.id))
+        #log.debug((self)
     
     # override the process function
     def process(self):
         if self.deleted:
-            #log.debug("Flag with id: " + str(self.id) + " is deleted, skip processing")
+            ##log.debug(("Flag with id: " + str(self.id) + " is deleted, skip processing")
             return
         # call the process function of the base class
         super().process()
         
-        log.debug("Flag with id: " + str(self.id) + " is processing")
+        #log.debug(("Flag with id: " + str(self.id) + " is processing")
+        log.debug(self)
         
     # define a string representation of the flag object
     def __str__(self):
-        return "{}(id:{} at {})".format(self.name, str(self.id), self.location)
+        # concatenate all item types in the item_stack with comma
+        item_types = ""
+        for item in self.item_stack:
+            item_types += str(item.type) + ","
+        return "{}(id:{} {}/{} with item_types {} at {})".format(self.name, str(self.id), len(self.item_stack), self.capacity, item_types, self.location)
     
     def delete(self):
         super().delete()
         self.building.flag = None
-        log.debug("Flag with id: " + str(self.id) + " is deleted")
+        #log.debug(("Flag with id: " + str(self.id) + " is deleted")
 
     def push_item(self, item):
-        self.item_stack.append(item.id)
-        log.debug("Item with id: " + str(item.id) + " added to flag with id: " + str(self.id))
+        # add location of flag to item
+        item.location = self.location
+        self.item_stack.append(item)
+        #log.debug(("Item with id: " + str(item.id) + " added to flag with id: " + str(self.id))
     
     def pop_item(self, item):
-        # remove the item from the item stack that matches the item id
-        # first check if the item id is in the item stack
-        if item.id in self.item_stack:
-            self.item_stack.remove(item.id)
-            log.debug("Item with id: " + str(item.id) + " removed from flag with id: " + str(self.id))
+        # remove the item from the item stack that matches the item
+        self.item_stack.remove(item)
+        log.debug("Item with id: " + str(item.id) + " removed from flag with id: " + str(self.id))
+    
+    def isFull(self):
+        if len(self.item_stack) >= self.capacity:
+            return True
         else:
-            log.debug("Item with id: " + str(item.id) + " not found in flag with id: " + str(self.id))
+            return False

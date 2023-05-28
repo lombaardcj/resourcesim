@@ -8,7 +8,7 @@ class Object:
     def __init__(self, location=None):
         Object.counter += 1
         self.id = Object.counter
-        self.location=location
+        self.location = location
         self.deleted = False
         # log.debug("Object created with id: " + str(self.id))
     
