@@ -32,7 +32,7 @@ class Flag(Object):
         super().process()
         
         #log.debug(("Flag with id: " + str(self.id) + " is processing")
-        log.debug(self)
+        #log.debug(self)
         
     # define a string representation of the flag object
     def __str__(self):
@@ -56,7 +56,7 @@ class Flag(Object):
     def pop_item(self, item):
         # remove the item from the item stack that matches the item
         self.item_stack.remove(item)
-        log.debug("Item with id: " + str(item.id) + " removed from flag with id: " + str(self.id))
+        # log.debug("Item with id: " + str(item.id) + " removed from flag with id: " + str(self.id))
     
     def isFull(self):
         if len(self.item_stack) >= self.capacity:

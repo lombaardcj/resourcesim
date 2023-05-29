@@ -10,7 +10,7 @@ from resources.object import Object
 
 # declare a class to represent a stack slot
 class StackSlot(Object):
-    def __init__(self, item, tick_duration=100, tick_production_rate=1):
+    def __init__(self, item, tick_duration, tick_production_rate=1):
         super().__init__()
         self.name = "StackSlot"+str(self.id)
         self.item = item # Item to store for tick_count

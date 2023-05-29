@@ -30,9 +30,9 @@ class ProductionType(Enum):
     
 # define an enum for the building production speed
 class ProductionSpeed(Enum):
-    WOODCUTTER=10
-    STONECUTTER=10
-    SAWMILL=5
+    WOODCUTTER=500
+    STONECUTTER=500
+    SAWMILL=100
 
 # define an enum for the building production capacity
 class ProductionCapacity(Enum):
@@ -100,18 +100,18 @@ class ProductionBuilding(Building):
             #log.debug("Production stack is not empty, process the production stack")
             for item in self.production_stack:
                 item.process()
-                log.debug("Processed item: " + str(item))
+                #log.debug("Processed item: " + str(item))
                 if item.isReady():
                     # first check if the building flag is full
                     if self.flag.isFull():
-                        log.debug("Flag {} is full, cannot push item: {} from ProductionBuilding with id: {}".format(self.flag.id, item.id, self.id))
+                        #log.debug("Flag {} is full, cannot push item: {} from ProductionBuilding with id: {}".format(self.flag.id, item.id, self.id))
                         continue
                     
                     # pop the item from the production stack
                     item = self.production_stack.pop(0).getItem()
                     # push the item to the item stack of flag
                     self.flag.push_item(item)
-                    log.debug("Item {} pushed to Flag {} from ProductionBuilding with id: {}".format(item.id, self.flag.id, self.id))
+                    #log.debug("Item {} pushed to Flag {} from ProductionBuilding with id: {}".format(item.id, self.flag.id, self.id))
         else:
             # production stack is empty, check if there is a production order that can be processed
             #log.debug("Production stack is empty, check if there is a production order that can be processed")
@@ -170,7 +170,7 @@ class ProductionBuilding(Building):
                     # create the output item on the production stack
                     stack_slot = StackSlot(item=Item(self.production_order.output_item_type, location=self.location), tick_duration=self.production_order.tick_duration)
                     self.production_stack.append(stack_slot)
-                    log.debug("Added stackslot for output item to start producing" + str(stack_slot))
+                    #log.debug("Added stackslot for output item to start producing" + str(stack_slot))
 
     # add item to material stack with location of the production building
     def addMaterial(self, item):

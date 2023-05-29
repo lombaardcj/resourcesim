@@ -115,3 +115,9 @@ class GameState():
         self._tick_duration = duration
     def get_tick_duration(self):
         return self._tick_duration
+        
+    def get_flag_stack(self):
+        return self._flag_stack
+        
+    def get_path_link_stack(self):
+        return self._path_link_stack

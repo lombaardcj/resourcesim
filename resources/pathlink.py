@@ -19,8 +19,9 @@ class PathLink(Object):
         self.item_stack_AB = [] # Keep list of all items transported from flagA to flagB
         self.item_stack_BA = [] # Keep list of all items transported from flagB to flagA
         self.capacity = capacity # maximum number of items that can be transported at once
+        self.speed = Location.distance(flagA.location, flagB.location) * 500 # speed of the pathlink
         #log.debug(("PathLink created with id: " + str(self.id))
-        #log.debug((str(self))
+        log.debug(self)
     
     def process(self):
         if self.deleted:
@@ -64,7 +65,7 @@ class PathLink(Object):
                     #log.debug(("Item {} pushed to Flag {} from PathLink with id: {}".format(item.id, self.flagA.id, self.id))
     
     def __str__(self):
-        return "{}(id:{} between Flag {} and Flag {} at {})".format(self.name, str(self.id), self.flagA.id, self.flagB.id, self.location)
+        return "{}(id:{} between Flag {} and Flag {} with speed {} at {})".format(self.name, str(self.id), self.flagA.id, self.flagB.id, self.speed, self.location)
         
     def push_item_AtoB(self, item):
         # check if the pathlink is full

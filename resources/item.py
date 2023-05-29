@@ -53,7 +53,7 @@ class Item(Object):
         super().process()
         
         #log.debug("Item with id: " + str(self.id) + " is processing")
-        log.debug(self)
+        #log.debug(self)
         
     # define a string representation of the item object
     def __str__(self):
