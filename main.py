@@ -1,99 +1,239 @@
+# Pygame code used from https://github.com/clear-code-projects/Pygame-Cameras/blob/main/camera.py
+
 import threading
 import logging
 import sys
 import time
 
-# import pygame
-import pygame
-from pygame.locals import *
-
 # import local modules
 from gameengine import GameState
 engine = GameState(startup_tick_duraction=1)
-
-class Crosshair(pygame.sprite.Sprite):
-    def __init__(self, picture_path):
-        super().__init__()
-        self.image = pygame.image.load(picture_path)
-        self.rect = self.image.get_rect()
-    def update(self):
-        self.rect.center = pygame.mouse.get_pos()
 
 # initialise the logger
 logging.basicConfig(stream=sys.stdout,level=logging.DEBUG)
 log = logging.getLogger(__name__)
 log.info("Initialising logger")
 
-# initialize pygame
+
+import pygame
+from random import randint
+
+class Tree(pygame.sprite.Sprite):
+	def __init__(self,pos,group):
+		super().__init__(group)
+		self.image = pygame.image.load('assets/images/tree.png').convert_alpha()
+		self.rect = self.image.get_rect(topleft = pos)
+
+class Player(pygame.sprite.Sprite):
+	def __init__(self,pos,group):
+		super().__init__(group)
+		self.image = pygame.image.load('assets/images/player.png').convert_alpha()
+		self.rect = self.image.get_rect(center = pos)
+		self.direction = pygame.math.Vector2()
+		self.speed = 5
+
+	def input(self):
+		keys = pygame.key.get_pressed()
+
+		if keys[pygame.K_UP]:
+			self.direction.y = -1
+		elif keys[pygame.K_DOWN]:
+			self.direction.y = 1
+		else:
+			self.direction.y = 0
+
+		if keys[pygame.K_RIGHT]:
+			self.direction.x = 1
+		elif keys[pygame.K_LEFT]:
+			self.direction.x = -1
+		else:
+			self.direction.x = 0
+
+	def update(self):
+		self.input()
+		self.rect.center += self.direction * self.speed
+
+class CameraGroup(pygame.sprite.Group):
+	def __init__(self):
+		super().__init__()
+		self.display_surface = pygame.display.get_surface()
+
+		# camera offset 
+		self.offset = pygame.math.Vector2()
+		self.half_w = self.display_surface.get_size()[0] // 2
+		self.half_h = self.display_surface.get_size()[1] // 2
+
+		# box setup
+		self.camera_borders = {'left': 200, 'right': 200, 'top': 100, 'bottom': 100}
+		l = self.camera_borders['left']
+		t = self.camera_borders['top']
+		w = self.display_surface.get_size()[0]  - (self.camera_borders['left'] + self.camera_borders['right'])
+		h = self.display_surface.get_size()[1]  - (self.camera_borders['top'] + self.camera_borders['bottom'])
+		self.camera_rect = pygame.Rect(l,t,w,h)
+
+		# ground
+		self.ground_surf = pygame.image.load('assets/images/ground.png').convert_alpha()
+		self.ground_rect = self.ground_surf.get_rect(topleft = (0,0))
+
+		# camera speed
+		self.keyboard_speed = 5
+		self.mouse_speed = 0.2
+
+		# zoom 
+		self.zoom_scale = 1
+		self.internal_surf_size = (2500,2500)
+		self.internal_surf = pygame.Surface(self.internal_surf_size, pygame.SRCALPHA)
+		self.internal_rect = self.internal_surf.get_rect(center = (self.half_w,self.half_h))
+		self.internal_surface_size_vector = pygame.math.Vector2(self.internal_surf_size)
+		self.internal_offset = pygame.math.Vector2()
+		self.internal_offset.x = self.internal_surf_size[0] // 2 - self.half_w
+		self.internal_offset.y = self.internal_surf_size[1] // 2 - self.half_h
+
+	def center_target_camera(self,target):
+		self.offset.x = target.rect.centerx - self.half_w
+		self.offset.y = target.rect.centery - self.half_h
+
+	def box_target_camera(self,target):
+
+		if target.rect.left < self.camera_rect.left:
+			self.camera_rect.left = target.rect.left
+		if target.rect.right > self.camera_rect.right:
+			self.camera_rect.right = target.rect.right
+		if target.rect.top < self.camera_rect.top:
+			self.camera_rect.top = target.rect.top
+		if target.rect.bottom > self.camera_rect.bottom:
+			self.camera_rect.bottom = target.rect.bottom
+
+		self.offset.x = self.camera_rect.left - self.camera_borders['left']
+		self.offset.y = self.camera_rect.top - self.camera_borders['top']
+
+	def keyboard_control(self):
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_a]: self.camera_rect.x -= self.keyboard_speed
+		if keys[pygame.K_d]: self.camera_rect.x += self.keyboard_speed
+		if keys[pygame.K_w]: self.camera_rect.y -= self.keyboard_speed
+		if keys[pygame.K_s]: self.camera_rect.y += self.keyboard_speed
+
+		self.offset.x = self.camera_rect.left - self.camera_borders['left']
+		self.offset.y = self.camera_rect.top - self.camera_borders['top']
+
+	def mouse_control(self):
+		mouse = pygame.math.Vector2(pygame.mouse.get_pos())
+		mouse_offset_vector = pygame.math.Vector2()
+
+		left_border = self.camera_borders['left']
+		top_border = self.camera_borders['top']
+		right_border = self.display_surface.get_size()[0] - self.camera_borders['right']
+		bottom_border = self.display_surface.get_size()[1] - self.camera_borders['bottom']
+
+		if top_border < mouse.y < bottom_border:
+			if mouse.x < left_border:
+				mouse_offset_vector.x = mouse.x - left_border
+				pygame.mouse.set_pos((left_border,mouse.y))
+			if mouse.x > right_border:
+				mouse_offset_vector.x = mouse.x - right_border
+				pygame.mouse.set_pos((right_border,mouse.y))
+		elif mouse.y < top_border:
+			if mouse.x < left_border:
+				mouse_offset_vector = mouse - pygame.math.Vector2(left_border,top_border)
+				pygame.mouse.set_pos((left_border,top_border))
+			if mouse.x > right_border:
+				mouse_offset_vector = mouse - pygame.math.Vector2(right_border,top_border)
+				pygame.mouse.set_pos((right_border,top_border))
+		elif mouse.y > bottom_border:
+			if mouse.x < left_border:
+				mouse_offset_vector = mouse - pygame.math.Vector2(left_border,bottom_border)
+				pygame.mouse.set_pos((left_border,bottom_border))
+			if mouse.x > right_border:
+				mouse_offset_vector = mouse - pygame.math.Vector2(right_border,bottom_border)
+				pygame.mouse.set_pos((right_border,bottom_border))
+
+		if left_border < mouse.x < right_border:
+			if mouse.y < top_border:
+				mouse_offset_vector.y = mouse.y - top_border
+				pygame.mouse.set_pos((mouse.x,top_border))
+			if mouse.y > bottom_border:
+				mouse_offset_vector.y = mouse.y - bottom_border
+				pygame.mouse.set_pos((mouse.x,bottom_border))
+
+		self.offset += mouse_offset_vector * self.mouse_speed
+
+	def zoom_keyboard_control(self):
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_q]:
+			self.zoom_scale += 0.1
+		if keys[pygame.K_e]:
+			self.zoom_scale -= 0.1
+
+	def custom_draw(self,player):
+		
+		# self.center_target_camera(player)
+		self.box_target_camera(player)
+		# self.keyboard_control()
+		self.mouse_control()
+		self.zoom_keyboard_control()
+
+		self.internal_surf.fill('#71ddee')
+
+		# ground 
+		ground_offset = self.ground_rect.topleft - self.offset + self.internal_offset
+		self.internal_surf.blit(self.ground_surf,ground_offset)
+
+		# active elements
+		for sprite in sorted(self.sprites(),key = lambda sprite: sprite.rect.centery):
+			offset_pos = sprite.rect.topleft - self.offset + self.internal_offset
+			self.internal_surf.blit(sprite.image,offset_pos)
+
+		scaled_surf = pygame.transform.scale(self.internal_surf,self.internal_surface_size_vector * self.zoom_scale)
+		scaled_rect = scaled_surf.get_rect(center = (self.half_w,self.half_h))
+
+		self.display_surface.blit(scaled_surf,scaled_rect)
+
+SCREEN_WIDTH = 1440
+SCREEN_HEIGHT = 810
+
 pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
+pygame.display.set_caption("Resource Simulator")
 clock = pygame.time.Clock()
+pygame.event.set_grab(True)
+pygame.mouse.set_visible(False)
 
-font = pygame.font.SysFont("Verdana", 20)
+# setup 
+camera_group = CameraGroup()
+player = Player((640,360),camera_group)
 
-# Predefined some colors
-BLUE  = (0, 0, 255)
-RED   = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-
-FG = WHITE
-BG = BLACK
-    
-# Screen information
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
-
-# create the display surface object
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Game")
-# pygame.mouse.set_visible(False)
-
-crosshair = Crosshair("assets/images/target.png")
-
-camera_group = pygame.sprite.Group()
-camera_group.add(crosshair)
+for i in range(20):
+	random_x = randint(1000,2000)
+	random_y = randint(1000,2000)
+	Tree((random_x,random_y),camera_group)
 
 def loop():
     while True:
+        # process game engine
         engine.process()
         
-        # check for pygame events
+        # process pygame events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        
-        # draw the game
-        screen.fill(BLACK)
-        
-        # # print the fps to the surface       
-        # text = font.render("Tick: " + str(int(engine.get_tick())), True, FG)
-        # screen.blit(text, (100, 0))
-        
-        # # print the flag stack to the surface
-        # # loop through each flag and also get the index
-        for index, flag in enumerate(engine.get_flag_stack()):
-        #     text = font.render(str(flag), True, FG)
-        #     screen.blit(text, (0, 20 + 20 * index))
-            
-            # translate the flag location to the screen
-            pygame.draw.circle(screen, BLUE, (int(flag.location.x*10), int(flag.location.y*10)), 5)
-        
-        # for path_link in engine.get_path_link_stack():
-        #     pygame.draw.line(screen, WHITE, 
-        #         (int(path_link.flagA.location.x*10), int(path_link.flagA.location.y*10)),
-        #         (int(path_link.flagB.location.x*10), int(path_link.flagB.location.y*10)),
-        #     1)
-        
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+            # camera zoom
+            if event.type == pygame.MOUSEWHEEL:
+                camera_group.zoom_scale += event.y * 0.03
+
+        screen.fill('#71ddee')
+
         camera_group.update()
-        camera_group.draw(screen)
+        camera_group.custom_draw(player)
 
-        pygame.display.flip()
+        pygame.display.update()
         clock.tick(60)
-
-        # sleep for the tick duration
-        # time.sleep(engine.get_tick_duration())
 
 if __name__ == "__main__":
     t = threading.Thread(target=loop)
